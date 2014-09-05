@@ -25,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.Toast;
 
 public class DealsFragment extends Fragment {
 
@@ -68,6 +69,13 @@ public class DealsFragment extends Fragment {
 
 	}
 
+	@Override
+	public void onDestroy() {
+		// TODO Auto-generated method stub
+		super.onDestroy();
+		pdialog.dismiss();
+	}
+
 	private class DealsAsynck extends AsyncTask<String, Void, String> {
 
 		@Override
@@ -82,29 +90,33 @@ public class DealsFragment extends Fragment {
 		protected String doInBackground(String... params) {
 			// TODO Auto-generated method stub
 			String result = null;
+			if (!NetworkConnectionStatus.isNetworkAvailable(getActivity())) {
+				result = "no internet";
+			} else {
 
-			DefaultHttpClient httpclient = new DefaultHttpClient();
-			HttpPost httpost = new HttpPost(params[0]);
+				DefaultHttpClient httpclient = new DefaultHttpClient();
+				HttpPost httpost = new HttpPost(params[0]);
 
-			try {
-				StringEntity se = new StringEntity(obj.toString());
+				try {
+					StringEntity se = new StringEntity(obj.toString());
 
-				httpost.setEntity(se);
-				httpost.setHeader("Content-type", "application/json");
-				HttpResponse response = httpclient.execute(httpost);
-				HttpEntity httpEntity = response.getEntity();
-				InputStream is = httpEntity.getContent();
-				result = convertStreamToString(is);
-				Log.i(TAG, result);
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+					httpost.setEntity(se);
+					httpost.setHeader("Content-type", "application/json");
+					HttpResponse response = httpclient.execute(httpost);
+					HttpEntity httpEntity = response.getEntity();
+					InputStream is = httpEntity.getContent();
+					result = convertStreamToString(is);
+					Log.i(TAG, result);
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			return result;
 		}
@@ -114,14 +126,22 @@ public class DealsFragment extends Fragment {
 			// TODO Auto-generated method stub
 			super.onPostExecute(result);
 
-			Gson gson = new Gson();
-			DealsObject obj = gson.fromJson(result, DealsObject.class);
-			// Log.i(TAG, obj.getResult().getTop().size());
-			System.out.println(obj.getResult().getTop().size());
-			adapter = new DealsListAdapter(getActivity(), obj);
-			lv.setAdapter(adapter);
+			if (result.equals("no internet")) {
+				pdialog.dismiss();
+				Toast.makeText(getActivity(), "Bad Internet connection!",
+						Toast.LENGTH_SHORT).show();
+			} else {
 
-			pdialog.dismiss();
+				// Parsing the Json using Gson library
+				Gson gson = new Gson();
+				DealsObject obj = gson.fromJson(result, DealsObject.class);
+				// Log.i(TAG, obj.getResult().getTop().size());
+				System.out.println(obj.getResult().getTop().size());
+				adapter = new DealsListAdapter(getActivity(), obj);
+				lv.setAdapter(adapter);
+				pdialog.dismiss();
+			}
+
 		}
 
 	}
